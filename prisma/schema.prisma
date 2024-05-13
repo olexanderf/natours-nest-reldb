@@ -14,7 +14,7 @@ datasource db {
 }
 
 model User {
-  key_id               String    @unique
+  key_id               String?   @unique
   id                   Int       @id @default(autoincrement())
   name                 String
   email                String    @unique
@@ -25,6 +25,8 @@ model User {
   passwordResetToken   String?
   passwordResetExpires DateTime?
   active               Boolean   @default(true)
+
+  @@map("users")
 }
 
 enum Role {
@@ -32,4 +34,49 @@ enum Role {
   GUIDE
   LEADGUIDE
   ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  DIFFICULT
+}
+
+model Tour {
+  id              Int        @id @default(autoincrement())
+  key_id          String?    @unique
+  name            String     @unique
+  slug            String?
+  duration        Int
+  maxGroupSize    Int
+  difficulty      Difficulty
+  ratingsAverage  Float      @default(4.5)
+  ratingsQuantity Int        @default(0)
+  price           Int
+  priceDiscount   Int?
+  summary         String
+  description     String
+  imageCover      String
+  images          String[]
+  createdAt       DateTime   @default(now())
+  startDates      DateTime[]
+  startLocation   Json
+  locations       Json
+
+  guides String[]
+
+  @@map("tours")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  key_id    String?  @unique
+  review    String
+  rating    Int
+  createdAt DateTime @default(now())
+
+  user String
+  tour String
+
+  @@map("reviews")
 }
