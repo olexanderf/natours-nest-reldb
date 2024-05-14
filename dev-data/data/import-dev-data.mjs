@@ -1,51 +1,94 @@
-import fs from 'fs';
+import { readFileSync } from 'fs';
 import { PrismaClient } from '@prisma/client';
 // Read JSON file
-// const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`, 'utf-8'));
-// console.log(import.meta.dirname);
-const users = JSON.parse(
-  fs.readFileSync(`${import.meta.dirname}/users.json`, 'utf-8')
+const tours = JSON.parse(
+  readFileSync(`${import.meta.dirname}/tours.json`, 'utf-8')
 );
-// const reviews = JSON.parse(
-//   fs.readFileSync(`${__dirname}/reviews.json`, 'utf-8')
-// );
-// console.log(prisma);
-
+const users = JSON.parse(
+  readFileSync(`${import.meta.dirname}/users.json`, 'utf-8')
+);
+const reviews = JSON.parse(
+  readFileSync(`${import.meta.dirname}/reviews.json`, 'utf-8')
+);
+//npx prisma init --datasource-provider sqlite);
+//console.log(import.meta.dirname);
 const prisma = new PrismaClient();
-await prisma.$connect();
+const replaceIdKey = (obj) => {
+  if (obj['_id'] !== undefined) {
+    obj['key_id'] = obj._id;
+    delete obj._id;
+  }
+  return obj;
+};
+
 // Import data from file to database
 const importData = async () => {
   try {
+    await prisma.$connect();
     Promise.all(
-      users.map(async (userItem) => {
-        userItem['key_id'] = userItem._id;
-        delete userItem._id;
-        userItem.role = userItem.role.toUpperCase().replace('-', '');
-        // console.log(userItem);
-        await prisma.user.create({ data: userItem });
+      users.map(async (user) => {
+        user = replaceIdKey(user);
+        user.role = user.role.toUpperCase().replace('-', '');
+        // console.log(user);
+
+        await prisma.user.create({
+          data: user,
+        });
+      }),
+
+      tours.map(async (tour) => {
+        tour = replaceIdKey(tour);
+        tour.locations = tour.locations.map((loc) => replaceIdKey(loc));
+        // console.log(tour);
+        tour.difficulty = tour.difficulty.toUpperCase();
+
+        const guideId = Promise.all(
+          tour.guides.map(async (guide) => {
+            user = await prisma.user.findUnique({
+              where: {
+                key_id: guide,
+              },
+            });
+            return user.id;
+          })
+        );
+
+        tour.guides = guideId;
+
+        await prisma.tour.create({
+          data: tour,
+        });
       })
+
+      // reviews.map(async (review) => {
+      //   review = replaceIdKey(review);
+      //   // console.log(review);
+
+      //   await prisma.review.create({
+      //     data: review,
+      //   });
+      // })
     );
-    // await Tour.create(tours);
-    // await User.create(users, { validateBeforeSave: false });
-    // await Review.create(reviews);
+    await prisma.$disconnect();
     console.log('Data successfully loaded');
   } catch (error) {
     console.log(error);
   }
-  await prisma.$disconnect();
   process.exit();
 };
 
 // Delete all data from collection
 const deleteData = async () => {
   try {
-    /*     await Tour.deleteMany();
-    await User.deleteMany();
-    await Review.deleteMany();
-  */ console.log('Data successfully deleted');
+    await prisma.$connect();
+    await prisma.user.deleteMany({});
+    await prisma.tour.deleteMany({});
+    await prisma.review.deleteMany({});
+    console.log('Data successfully deleted');
   } catch (error) {
     console.log(error);
   }
+  await prisma.$disconnect();
   process.exit();
 };
 

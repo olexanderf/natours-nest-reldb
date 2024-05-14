@@ -14,4 +14,29 @@ export class UserService {
       },
     });
   }
+  deleteUserByAdmin(id: string) {
+    return this.prisma.user.delete({
+      where: {
+        id: +id,
+      },
+    });
+  }
+  updateUser(id: string, dto: any) {
+    return this.prisma.user.update({
+      where: {
+        id: +id,
+      },
+      data: dto,
+    });
+  }
+  deleteCurrentUser(id: string) {
+    return this.prisma.user.update({
+      where: {
+        id: +id,
+      },
+      data: {
+        active: false,
+      },
+    });
+  }
 }

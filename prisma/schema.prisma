@@ -26,6 +26,9 @@ model User {
   passwordResetExpires DateTime?
   active               Boolean   @default(true)
 
+  reviews Review[]
+  tours   GuidesOfTour[]
+
   @@map("users")
 }
 
@@ -63,9 +66,19 @@ model Tour {
   startLocation   Json
   locations       Json
 
-  guides String[]
+  Review Review[]
+  guides GuidesOfTour[]
 
   @@map("tours")
+}
+
+model GuidesOfTour {
+  guide      User   @relation(fields: [guideEmail], references: [email])
+  guideEmail String
+  tour       Tour   @relation(fields: [tourName], references: [name])
+  tourName   String
+
+  @@id([guideEmail, tourName])
 }
 
 model Review {
@@ -75,8 +88,11 @@ model Review {
   rating    Int
   createdAt DateTime @default(now())
 
-  user String
-  tour String
+  authorEmail String
+  tourName    String
+
+  user User @relation(fields: [authorEmail], references: [email])
+  tour Tour @relation(fields: [tourName], references: [name])
 
   @@map("reviews")
 }
